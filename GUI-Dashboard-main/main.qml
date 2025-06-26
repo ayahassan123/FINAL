@@ -9,35 +9,40 @@ import QtQuick.Dialogs 1.3
 import "Components"
 import "qrc:/LayoutManager.js" as Responsive
 
+// Main application window for the Tesla-like interface
 ApplicationWindow {
     id: root
-    property var logger: Logger
-    property var theme: Style
-    property bool isFrunkOpen: false
-    property bool isTrunkOpen: false
-    property bool isLocked: false
-    property bool isCharging: false
+    property var logger: Logger // Logger for recording actions
+    property var theme: Style // Theme object for styling
+    property bool isFrunkOpen: false // Tracks frunk open/close state
+    property bool isTrunkOpen: false // Tracks trunk open/close state
+    property bool isLocked: false // Tracks vehicle lock state
+    property bool isCharging: false // Tracks charging state
 
     width: 1920
     height: 1200
     visible: true
     title: qsTr("Tesla Screen")
 
+    // Load custom font
     FontLoader {
         id: uniTextFont
         source: "qrc:/Fonts/Unitext Regular.ttf"
     }
 
+    // Dynamic background based on theme
     background: Loader {
         anchors.fill: parent
         sourceComponent: theme.mapAreaVisible ? backgroundRect : backgroundImage
     }
 
+    // Header component
     Header {
         id: headerLayout
         z: 99
     }
 
+    // Footer with various control buttons
     footer: Footer {
         id: footerLayout
         onOpenLauncher: launcher.open()
@@ -53,6 +58,7 @@ ApplicationWindow {
         onMessagesClicked: messagesPopup.open()
     }
 
+    // Column of icons on the top-left
     TopLeftButtonIconColumn {
         z: 99
         anchors {
@@ -62,6 +68,7 @@ ApplicationWindow {
         }
     }
 
+    // Test button for logging
     Button {
         text: "Test Logger"
         anchors {
@@ -75,6 +82,8 @@ ApplicationWindow {
             console.log("Logged message to file")
         }
     }
+
+    // Main layout for map and speedometer when map is visible
     RowLayout {
         id: mapLayout
         visible: theme.mapAreaVisible
@@ -86,17 +95,18 @@ ApplicationWindow {
             Layout.preferredWidth: 620
             Layout.fillHeight: true
 
-            // دمج الصورة والعداد كـ Layer واحد
+            // Combined car image and speedometer
             Item {
                 id: integratedCarSpeed
                 anchors.fill: parent
 
+                // Car image display
                 Image {
                     id: carImage
                     anchors {
                         top: parent.top
                         horizontalCenter: parent.horizontalCenter
-                        topMargin: -60 // إزالة المسافة فوق الصورة
+                        topMargin: -60
                     }
                     source: theme.isDark ? "qrc:/icons/light/sidebar.png" : "qrc:/icons/dark/sidebar-light.png"
                     width: 900
@@ -104,6 +114,7 @@ ApplicationWindow {
                     fillMode: Image.PreserveAspectFit
                 }
 
+                // Speedometer container
                 Item {
                     id: speedometerContainer
                     width: 180
@@ -111,9 +122,10 @@ ApplicationWindow {
                     anchors {
                         top: carImage.bottom
                         horizontalCenter: parent.horizontalCenter
-                        topMargin: -380 // تقليل المسافة لتبدو متكاملة
+                        topMargin: -380
                     }
 
+                    // Speedometer background canvas
                     Canvas {
                         id: speedometerBackground
                         anchors.fill: parent
@@ -129,7 +141,7 @@ ApplicationWindow {
                             ctx.stroke();
 
                             ctx.font = "12px Inter";
-                            ctx.fillStyle = "#87CEEB"; // لون أزرق سماوي
+                            ctx.fillStyle = "#87CEEB";
                             ctx.textAlign = "center";
                             ctx.textBaseline = "middle";
 
@@ -142,6 +154,7 @@ ApplicationWindow {
                         }
                     }
 
+                    // Speedometer needle canvas
                     Canvas {
                         id: speedometerNeedle
                         anchors.fill: parent
@@ -173,6 +186,7 @@ ApplicationWindow {
                         }
                     }
 
+                    // Speed display text
                     Text {
                         id: speedText
                         anchors.centerIn: parent
@@ -186,6 +200,7 @@ ApplicationWindow {
             }
         }
 
+        // Navigation map component
         NavigationMapHelperScreen {
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -193,8 +208,7 @@ ApplicationWindow {
         }
     }
 
-
-
+    // Timer for simulating speed changes
     Timer {
         id: speedTimer
         interval: 5000
@@ -210,12 +224,14 @@ ApplicationWindow {
         }
     }
 
+    // Function to animate speed changes
     function animateSpeedChange(newSpeed) {
         speedAnimation.from = speedometerNeedle.currentSpeed;
         speedAnimation.to = newSpeed;
         speedAnimation.start();
     }
 
+    // Animation for speedometer needle
     NumberAnimation {
         id: speedAnimation
         target: speedometerNeedle
@@ -224,6 +240,7 @@ ApplicationWindow {
         easing.type: Easing.OutQuad
     }
 
+    // Launcher control for various features
     LaunchPadControl {
         id: launcher
         y: (root.height - height) / 2 + footerLayout.height
@@ -247,6 +264,8 @@ ApplicationWindow {
         onHeatedSteeringClicked: heatedSteeringPopup.open()
         onWipersClicked: wipersPopup.open()
     }
+
+    // Media player for music playback
     MediaPlayer {
         id: musicPlayer
         source: ""
@@ -257,10 +276,11 @@ ApplicationWindow {
         }
     }
 
+    // File dialog for selecting music files
     FileDialog {
         id: fileDialog
         title: "Choose an MP3 file"
-        folder: "file:///C:/Users/Dell/Downloads" // يفتح مجلد Downloads مباشرة
+        folder: "file:///C:/Users/Dell/Downloads"
         nameFilters: ["MP3 files (*.mp3)"]
         onAccepted: {
             musicPlayer.source = fileDialog.fileUrl
@@ -268,6 +288,8 @@ ApplicationWindow {
             console.log("Selected file:", musicPlayer.source)
         }
     }
+
+    // Radio stations list model
     ListModel {
         id: radioListModel
         ListElement { name: "BBC Radio 1"; streamUrl: "http://stream.live.vc.bbcmedia.co.uk/bbc_radio_one" }
@@ -277,9 +299,9 @@ ApplicationWindow {
         ListElement { name: "Radio France"; streamUrl: "https://icecast.radiofrance.fr/fip-midfi.mp3" }
     }
 
+    // Music tracks list model
     ListModel {
         id: musicListModel
-        // استبدل song1.mp3, song2.mp3, song3.mp3 بأسماء الملفات الفعلية
         ListElement { name: "Song 1"; filePath: "file:///C:/Users/Dell/Downloads/song1.mp3" }
         ListElement { name: "Song 2"; filePath: "file:///C:/Users/Dell/Downloads/song2.mp3" }
         ListElement { name: "Song 3"; filePath: "file:///C:/Users/Dell/Downloads/song3.mp3" }
@@ -287,6 +309,7 @@ ApplicationWindow {
         ListElement { name: "Song 5"; filePath: "file:///C:/Users/Dell/Downloads/song5.mp3" }
     }
 
+    // Background rectangle component
     Component {
         id: backgroundRect
         Rectangle {
@@ -295,10 +318,13 @@ ApplicationWindow {
         }
     }
 
+    // Background image with control buttons
     Component {
         id: backgroundImage
         Image {
             source: theme.getImageBasedOnTheme()
+
+            // Lock button
             Button {
                 id: lockButton
                 anchors {
@@ -307,12 +333,12 @@ ApplicationWindow {
                     verticalCenterOffset: -350
                     horizontalCenterOffset: 37
                 }
-                width: 100 // عرض الزر
-                height: 100 // ارتفاع الزر
+                width: 100
+                height: 100
                 icon.source: theme.isDark ? "qrc:/icons/car_action_icons/dark/lock.svg" : "qrc:/icons/car_action_icons/lock.svg"
                 icon.color: root.isLocked ? "#ff0000" : "#00ff00"
-                icon.width: 80 // عرض الأيقونة
-                icon.height: 80 // ارتفاع الأيقونة
+                icon.width: 80
+                icon.height: 80
                 background: Rectangle {
                     color: "transparent"
                 }
@@ -320,13 +346,11 @@ ApplicationWindow {
                     root.isLocked = !root.isLocked;
 
                     if (root.isLocked) {
-                        // قفل السيارة يؤدي إلى إيقاف كل العناصر
                         root.isFrunkOpen = false;
                         root.isTrunkOpen = false;
-                        root.isCharging = false; // إيقاف الشحن عند القفل
+                        root.isCharging = false;
                     }
 
-                    // تسجيل الحالة
                     logger.logMessage("Vehicle " + (root.isLocked ? "locked" : "unlocked") +
                                       ", Frunk: " + (root.isFrunkOpen ? "open" : "closed") +
                                       ", Trunk: " + (root.isTrunkOpen ? "open" : "closed") +
@@ -336,10 +360,7 @@ ApplicationWindow {
                 }
             }
 
-
-
-
-
+            // Lights control button
             Button {
                 id: lightsButton
                 anchors {
@@ -363,22 +384,23 @@ ApplicationWindow {
                 }
             }
 
+            // Charging control button
             Button {
                 id: chargeButton
                 anchors {
                     horizontalCenter: parent.horizontalCenter
                     verticalCenter: parent.verticalCenter
-                    verticalCenterOffset: -80 // ضبط الموقع العمودي
-                    horizontalCenterOffset: 550 // ضبط الموقع الأفقي
+                    verticalCenterOffset: -80
+                    horizontalCenterOffset: 550
                 }
-                width: 80 // عرض الزر يساوي عرض الأيقونة
-                height: 80 // ارتفاع الزر يساوي ارتفاع الأيقونة
+                width: 80
+                height: 80
                 icon.source: theme.isDark ? "qrc:/icons/car_action_icons/Power.svg" : "qrc:/icons/car_action_icons/charge.svg"
-                icon.width: 50 // عرض الأيقونة
-                icon.height: 50 // ارتفاع الأيقونة
-                icon.color: root.isCharging ? "#00ff00" : "#ff0000" // تغيير اللون بناءً على حالة الشحن
-                enabled: !root.isLocked // تعطيل الزر عند قفل السيارة
-                background: null // إزالة الخلفية تمامًا
+                icon.width: 50
+                icon.height: 50
+                icon.color: root.isCharging ? "#00ff00" : "#ff0000"
+                enabled: !root.isLocked
+                background: null
                 onClicked: {
                     if (!root.isLocked) {
                         root.isCharging = !root.isCharging
@@ -391,10 +413,7 @@ ApplicationWindow {
                 }
             }
 
-
-
-
-
+            // Trunk control layout
             ColumnLayout {
                 anchors {
                     horizontalCenter: parent.horizontalCenter
@@ -418,6 +437,7 @@ ApplicationWindow {
                 }
             }
 
+            // Frunk control layout
             ColumnLayout {
                 anchors {
                     horizontalCenter: parent.horizontalCenter
@@ -443,6 +463,7 @@ ApplicationWindow {
         }
     }
 
+    // Generic control layout component for trunk/frunk
     Component {
         id: controlLayoutComponent
         ColumnLayout {
@@ -491,6 +512,7 @@ ApplicationWindow {
         }
     }
 
+    // Base popup component for modals
     Component {
         id: basePopup
         Popup {
@@ -522,6 +544,7 @@ ApplicationWindow {
         }
     }
 
+    // Phone dialer popup
     Popup {
         id: phonePopup
         anchors.centerIn: parent
@@ -676,6 +699,7 @@ ApplicationWindow {
         }
     }
 
+    // Bluetooth devices popup
     Popup {
         id: bluetoothPopup
         anchors.centerIn: parent
@@ -760,6 +784,8 @@ ApplicationWindow {
             }
         }
     }
+
+    // Radio player
     MediaPlayer {
         id: radioPlayer
         source: ""
@@ -779,6 +805,7 @@ ApplicationWindow {
         }
     }
 
+    // Radio popup
     Popup {
         id: radioPopup
         anchors.centerIn: parent
@@ -844,14 +871,8 @@ ApplicationWindow {
                     clip: true
                     model: ListModel {
                         id: radioStationsModel
-
                         ListElement { name: "NPR"; streamUrl: "https://npr-ice.streamguys1.com/live.mp3" }
                         ListElement { name: "Radio France"; streamUrl: "https://icecast.radiofrance.fr/fip-midfi.mp3" }
-                    }BusyIndicator {
-                        id: radioLoadingIndicator
-                        Layout.alignment: Qt.AlignHCenter
-                        running: radioPlayer.status === MediaPlayer.Loading
-                        visible: running
                     }
                     delegate: Button {
                         width: parent.width
@@ -882,6 +903,14 @@ ApplicationWindow {
                         }
                     }
                     ScrollBar.vertical: ScrollBar {}
+                }
+
+                // Loading indicator for radio
+                BusyIndicator {
+                    id: radioLoadingIndicator
+                    Layout.alignment: Qt.AlignHCenter
+                    running: radioPlayer.status === MediaPlayer.Loading
+                    visible: running
                 }
 
                 RowLayout {
@@ -996,7 +1025,255 @@ ApplicationWindow {
         }
     }
 
+    // Spotify popup
+    Popup {
+        id: spotifyPopup
+        anchors.centerIn: parent
+        width: 500
+        height: 600
+        modal: true
+        focus: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
+        // Spotify media player
+        MediaPlayer {
+            id: spotifyPlayer
+            source: ""
+            volume: spotifyVolumeSlider.value / 100
+            onError: {
+                spotifyErrorText.text = "Error: " + errorString + "\nCode: " + error
+                spotifyErrorText.visible = true
+                console.log("Spotify Player error:", error, errorString)
+                spotifyPlayPauseButton.text = "▶"
+            }
+            onPlaying: {
+                spotifyErrorText.visible = false
+                spotifyPlayPauseButton.text = "⏸"
+            }
+            onStopped: {
+                spotifyPlayPauseButton.text = "▶"
+            }
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            color: Style.isDark ? "#212121" : "#fafafa"
+            radius: 20
+            border.color: Style.isDark ? "#424242" : "#e0e0e0"
+            border.width: 1
+
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: 15
+
+                // Spotify title
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.topMargin: 20
+                    text: "Spotify Playlists"
+                    font.family: "Inter"
+                    font.pixelSize: 24
+                    font.bold: Font.Medium
+                    color: Style.isDark ? "#ffffff" : "#212121"
+                }
+
+                // Current playlist display
+                Text {
+                    id: currentPlaylistText
+                    Layout.alignment: Qt.AlignHCenter
+                    text: spotifyPlayer.source.toString().split('/').pop() || "No playlist selected"
+                    font.family: "Inter"
+                    font.pixelSize: 18
+                    color: Style.isDark ? "#ffffff" : "#424242"
+                    wrapMode: Text.Wrap
+                    maximumLineCount: 2
+                    Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignHCenter
+                }
+
+                // Error text for Spotify
+                Text {
+                    id: spotifyErrorText
+                    Layout.alignment: Qt.AlignHCenter
+                    text: ""
+                    font.family: "Inter"
+                    font.pixelSize: 16
+                    color: "#F44336"
+                    visible: false
+                    wrapMode: Text.Wrap
+                    maximumLineCount: 2
+                    Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignHCenter
+                }
+
+                // Spotify playlists list
+                ListView {
+                    id: spotifyListView
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.margins: 20
+                    clip: true
+                    model: ListModel {
+                        id: spotifyPlaylistsModel
+                        ListElement { name: "Chill Hits"; streamUrl: "https://example.com/spotify/chill_hits.mp3" }
+                        ListElement { name: "Rock Classics"; streamUrl: "https://example.com/spotify/rock_classics.mp3" }
+                        ListElement { name: "Pop Hits"; streamUrl: "https://example.com/spotify/pop_hits.mp3" }
+                    }
+                    delegate: Button {
+                        width: parent.width
+                        height: 60
+                        text: name
+                        font.family: "Inter"
+                        font.pixelSize: 18
+                        onClicked: {
+                            spotifyPlayer.stop();
+                            spotifyPlayer.source = streamUrl;
+                            spotifyPlayer.play();
+                            currentPlaylistText.text = name;
+                            console.log("Playing Spotify playlist:", name);
+                        }
+                        background: Rectangle {
+                            color: Style.isDark ? "#424242" : "#ffffff"
+                            radius: 10
+                            border.color: Style.isDark ? "#616161" : "#e0e0e0"
+                            border.width: 1
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            font: parent.font
+                            color: Style.isDark ? "#ffffff" : "#424242"
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            elide: Text.ElideRight
+                        }
+                    }
+                    ScrollBar.vertical: ScrollBar {}
+                }
+
+                // Loading indicator for Spotify
+                BusyIndicator {
+                    id: spotifyLoadingIndicator
+                    Layout.alignment: Qt.AlignHCenter
+                    running: spotifyPlayer.status === MediaPlayer.Loading
+                    visible: running
+                }
+
+                // Playback controls
+                RowLayout {
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 20
+
+                    Button {
+                        id: spotifyPlayPauseButton
+                        text: "▶"
+                        width: 80
+                        height: 80
+                        onClicked: {
+                            if (spotifyPlayer.playbackState === MediaPlayer.PlayingState) {
+                                spotifyPlayer.pause();
+                                text = "▶";
+                            } else {
+                                if (spotifyPlayer.source.toString() === "") {
+                                    spotifyErrorText.text = "Please select a playlist first";
+                                    spotifyErrorText.visible = true;
+                                } else {
+                                    spotifyPlayer.play();
+                                    text = "⏸";
+                                }
+                            }
+                        }
+                        background: Rectangle {
+                            color: "#4CAF50"
+                            radius: 40
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            font.family: "Inter"
+                            font.pixelSize: 30
+                            color: "#ffffff"
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+
+                    Button {
+                        text: "Stop"
+                        width: 80
+                        height: 80
+                        onClicked: {
+                            spotifyPlayer.stop();
+                            spotifyPlayPauseButton.text = "▶";
+                        }
+                        background: Rectangle {
+                            color: "#F44336"
+                            radius: 40
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            font.family: "Inter"
+                            font.pixelSize: 18
+                            color: "#ffffff"
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+                }
+
+                // Volume control
+                RowLayout {
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 10
+
+                    Text {
+                        text: "Volume:"
+                        font.family: "Inter"
+                        font.pixelSize: 16
+                        color: Style.isDark ? "#ffffff" : "#424242"
+                    }
+
+                    Slider {
+                        id: spotifyVolumeSlider
+                        width: 150
+                        from: 0
+                        to: 100
+                        value: 50
+                        onValueChanged: {
+                            spotifyPlayer.volume = value / 100;
+                        }
+                    }
+                }
+
+                // Close button
+                Button {
+                    text: "Close"
+                    width: 120
+                    height: 40
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.bottomMargin: 20
+                    onClicked: {
+                        spotifyPlayer.stop();
+                        spotifyPopup.close();
+                    }
+                    background: Rectangle {
+                        color: "transparent"
+                        border.color: Style.isDark ? "#757575" : "#bdbdbd"
+                        border.width: 1
+                        radius: 20
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        font.family: "Inter"
+                        font.pixelSize: 16
+                        color: Style.isDark ? "#ffffff" : "#616161"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
+            }
+        }
+    }
+
+    // Dashcam control popup
     Popup {
         id: dashcamPopup
         anchors.centerIn: parent
@@ -1096,6 +1373,7 @@ ApplicationWindow {
         }
     }
 
+    // TuneIn stations popup
     Popup {
         id: tuneinPopup
         anchors.centerIn: parent
@@ -1181,6 +1459,7 @@ ApplicationWindow {
         }
     }
 
+    // Music player popup
     Popup {
         id: musicPopup
         anchors.centerIn: parent
@@ -1429,6 +1708,8 @@ ApplicationWindow {
             }
         }
     }
+
+    // Calendar popup
     Popup {
         id: calendarPopup
         anchors.centerIn: parent
@@ -1439,7 +1720,7 @@ ApplicationWindow {
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
         property int selectedDay: -1
-        property var currentDate: new Date() // تخزين التاريخ الحالي للمقارنة
+        property var currentDate: new Date()
 
         Rectangle {
             anchors.fill: parent
@@ -1544,14 +1825,13 @@ ApplicationWindow {
                                             var dayDate = new Date(yearSelector.currentText, monthSelector.currentIndex, index + 1);
                                             var today = new Date();
 
-                                            // Reset time components for accurate comparison
                                             dayDate.setHours(0,0,0,0);
                                             today.setHours(0,0,0,0);
 
                                             if (dayDate.getTime() === today.getTime()) {
-                                                return "#4CAF50"; // أزرق لليوم الحالي
+                                                return "#4CAF50";
                                             } else if (calendarPopup.selectedDay === index + 1) {
-                                                return "#4CAF50"; // أخضر لليوم المختار
+                                                return "#4CAF50";
                                             } else {
                                                 return Style.isDark ? "#424242" : "#ffffff";
                                             }
@@ -1575,7 +1855,7 @@ ApplicationWindow {
                                             today.setHours(0,0,0,0);
 
                                             if (dayDate.getTime() === today.getTime() || calendarPopup.selectedDay === index + 1) {
-                                                return "#ffffff"; // إطار أبيض لليوم الحالي والمختار
+                                                return "#ffffff";
                                             } else {
                                                 return "transparent";
                                             }
@@ -1596,7 +1876,7 @@ ApplicationWindow {
                                         today.setHours(0,0,0,0);
 
                                         if (dayDate.getTime() === today.getTime() || calendarPopup.selectedDay === index + 1) {
-                                            return "#ffffff"; // نص أبيض لليوم الحالي والمختار
+                                            return "#ffffff";
                                         } else {
                                             return Style.isDark ? "#ffffff" : "#424242";
                                         }
@@ -1658,17 +1938,19 @@ ApplicationWindow {
                 Component.onCompleted: updateDays()
 
                 Timer {
-                    interval: 86400000 // 24 hours
+                    interval: 86400000
                     running: true
                     repeat: true
                     onTriggered: {
-                        currentDate = new Date(); // تحديث التاريخ الحالي
-                        updateDays(); // تحديث التقويم
+                        currentDate = new Date();
+                        updateDays();
                     }
                 }
             }
         }
     }
+
+    // Zoom meeting popup
     Popup {
         id: zoomPopup
         anchors.centerIn: parent
@@ -1784,6 +2066,7 @@ ApplicationWindow {
         }
     }
 
+    // Messages popup
     Popup {
         id: messagesPopup
         anchors.centerIn: parent
@@ -1974,6 +2257,7 @@ ApplicationWindow {
         }
     }
 
+    // Caraoke songs popup
     Popup {
         id: caraokePopup
         anchors.centerIn: parent
@@ -2059,768 +2343,887 @@ ApplicationWindow {
         }
     }
 
-    Popup {
-        id: theaterPopup
-        anchors.centerIn: parent
-        width: 400
-        height: 500
-        modal: true
-        focus: true
-        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+    // Theater mode popup for selecting streaming services
+        Popup {
+            id: theaterPopup
+            anchors.centerIn: parent
+            width: 400
+            height: 500
+            modal: true
+            focus: true
+            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
-        Rectangle {
-            anchors.fill: parent
-            color: Style.isDark ? "#212121" : "#fafafa"
-            radius: 20
-            border.color: Style.isDark ? "#424242" : "#e0e0e0"
-            border.width: 1
-
-            ColumnLayout {
+            // Background rectangle with theme-based styling
+            Rectangle {
                 anchors.fill: parent
-                spacing: 15
+                color: Style.isDark ? "#212121" : "#fafafa"
+                radius: 20
+                border.color: Style.isDark ? "#424242" : "#e0e0e0"
+                border.width: 1
 
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.topMargin: 20
-                    text: "Theater Mode"
-                    font.family: "Inter"
-                    font.pixelSize: 24
-                    font.bold: Font.Medium
-                    color: Style.isDark ? "#ffffff" : "#212121"
-                }
+                // Main layout for theater mode controls
+                ColumnLayout {
+                    anchors.fill: parent
+                    spacing: 15
 
-                ListView {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    Layout.margins: 20
-                    clip: true
-                    model: ["Netflix", "YouTube", "Hulu"]
-                    delegate: Button {
-                        width: parent.width
-                        height: 60
-                        text: modelData
+                    // Title for the theater mode popup
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.topMargin: 20
+                        text: "Theater Mode"
                         font.family: "Inter"
-                        font.pixelSize: 18
-                        onClicked: console.log("Opening:", modelData)
-                        background: Rectangle {
-                            color: Style.isDark ? "#424242" : "#ffffff"
-                            radius: 10
-                            border.color: Style.isDark ? "#616161" : "#e0e0e0"
-                            border.width: 1
-                        }
-                        contentItem: Text {
-                            text: parent.text
-                            font: parent.font
-                            color: Style.isDark ? "#ffffff" : "#424242"
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
+                        font.pixelSize: 24
+                        font.bold: Font.Medium
+                        color: Style.isDark ? "#ffffff" : "#212121"
                     }
-                }
 
-                Button {
-                    text: "Close"
-                    width: 120
-                    height: 40
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.bottomMargin: 20
-                    onClicked: theaterPopup.close()
-                    background: Rectangle {
-                        color: "transparent"
-                        border.color: Style.isDark ? "#757575" : "#bdbdbd"
-                        border.width: 1
-                        radius: 20
-                    }
-                    contentItem: Text {
-                        text: parent.text
-                        font.family: "Inter"
-                        font.pixelSize: 16
-                        color: Style.isDark ? "#ffffff" : "#616161"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
-                }
-            }
-        }
-    }
-
-    Popup {
-        id: toyboxPopup
-        anchors.centerIn: parent
-        width: 400
-        height: 500
-        modal: true
-        focus: true
-        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-
-        Rectangle {
-            anchors.fill: parent
-            color: Style.isDark ? "#212121" : "#fafafa"
-            radius: 20
-            border.color: Style.isDark ? "#424242" : "#e0e0e0"
-            border.width: 1
-
-            ColumnLayout {
-                anchors.fill: parent
-                spacing: 15
-
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.topMargin: 20
-                    text: "Toybox"
-                    font.family: "Inter"
-                    font.pixelSize: 24
-                    font.bold: Font.Medium
-                    color: Style.isDark ? "#ffffff" : "#212121"
-                }
-
-                ListView {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    Layout.margins: 20
-                    clip: true
-                    model: ["Chess", "Fart Sounds", "Santa Mode", "Light Show", "Sketchpad"]
-                    delegate: Button {
-                        width: parent.width
-                        height: 60
-                        text: modelData
-                        font.family: "Inter"
-                        font.pixelSize: 18
-                        onClicked: {
-                            console.log("Toybox item selected:", modelData);
-                            // يمكنك إضافة وظائف لكل عنصر هنا
-                            if (modelData === "Chess") {
-                                console.log("Launching Chess game");
-                            } else if (modelData === "Fart Sounds") {
-                                console.log("Playing funny sounds");
-                            } else if (modelData === "Santa Mode") {
-                                console.log("Activating Santa Mode");
+                    // List of streaming services
+                    ListView {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Layout.margins: 20
+                        clip: true
+                        model: ["Netflix", "YouTube", "Hulu"]
+                        delegate: Button {
+                            width: parent.width
+                            height: 60
+                            text: modelData
+                            font.family: "Inter"
+                            font.pixelSize: 18
+                            // Log selection of streaming service
+                            onClicked: {
+                                console.log("Opening:", modelData)
+                                logger.logMessage("Theater mode: " + modelData + " selected")
+                            }
+                            // Button background with theme-based styling
+                            background: Rectangle {
+                                color: Style.isDark ? "#424242" : "#ffffff"
+                                radius: 10
+                                border.color: Style.isDark ? "#616161" : "#e0e0e0"
+                                border.width: 1
+                            }
+                            // Button text with theme-based color
+                            contentItem: Text {
+                                text: parent.text
+                                font: parent.font
+                                color: Style.isDark ? "#ffffff" : "#424242"
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
                             }
                         }
+                    }
+
+                    // Close button for the popup
+                    Button {
+                        text: "Close"
+                        width: 120
+                        height: 40
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.bottomMargin: 20
+                        onClicked: theaterPopup.close()
+                        // Transparent background with themed border
                         background: Rectangle {
-                            color: Style.isDark ? "#424242" : "#ffffff"
-                            radius: 10
-                            border.color: Style.isDark ? "#616161" : "#e0e0e0"
+                            color: "transparent"
+                            border.color: Style.isDark ? "#757575" : "#bdbdbd"
                             border.width: 1
+                            radius: 20
                         }
+                        // Button text with theme-based color
                         contentItem: Text {
                             text: parent.text
-                            font: parent.font
-                            color: Style.isDark ? "#ffffff" : "#424242"
+                            font.family: "Inter"
+                            font.pixelSize: 16
+                            color: Style.isDark ? "#ffffff" : "#616161"
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
                         }
                     }
                 }
-
-                Button {
-                    text: "Close"
-                    width: 120
-                    height: 40
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.bottomMargin: 20
-                    onClicked: toyboxPopup.close()
-                    background: Rectangle {
-                        color: "transparent"
-                        border.color: Style.isDark ? "#757575" : "#bdbdbd"
-                        border.width: 1
-                        radius: 20
-                    }
-                    contentItem: Text {
-                        text: parent.text
-                        font.family: "Inter"
-                        font.pixelSize: 16
-                        color: Style.isDark ? "#ffffff" : "#616161"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
-                }
             }
         }
-    }
 
-    Popup {
-        id: frontDefrostPopup
-        anchors.centerIn: parent
-        width: 400
-        height: 300
-        modal: true
-        focus: true
-        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        // Toybox popup for selecting fun features and games
+        Popup {
+            id: toyboxPopup
+            anchors.centerIn: parent
+            width: 400
+            height: 500
+            modal: true
+            focus: true
+            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
-        property bool isFrontDefrostOn: false
-
-        Rectangle {
-            anchors.fill: parent
-            color: Style.isDark ? "#212121" : "#fafafa"
-            radius: 20
-            border.color: Style.isDark ? "#424242" : "#e0e0e0"
-            border.width: 1
-
-            ColumnLayout {
+            // Background rectangle with theme-based styling
+            Rectangle {
                 anchors.fill: parent
-                spacing: 15
+                color: Style.isDark ? "#212121" : "#fafafa"
+                radius: 20
+                border.color: Style.isDark ? "#424242" : "#e0e0e0"
+                border.width: 1
 
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.topMargin: 20
-                    text: "Front Defrost Control"
-                    font.family: "Inter"
-                    font.pixelSize: 24
-                    font.bold: Font.Medium
-                    color: Style.isDark ? "#ffffff" : "#212121"
-                }
+                // Main layout for toybox controls
+                ColumnLayout {
+                    anchors.fill: parent
+                    spacing: 15
 
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    text: frontDefrostPopup.isFrontDefrostOn ? "Front Defrost: ON" : "Front Defrost: OFF"
-                    font.family: "Inter"
-                    font.pixelSize: 18
-                    color: Style.isDark ? "#ffffff" : "#424242"
-                }
-
-                RowLayout {
-                    Layout.alignment: Qt.AlignHCenter
-                    spacing: 20
-
-                    Button {
-                        text: "Turn On"
-                        width: 150
-                        height: 50
-                        enabled: !frontDefrostPopup.isFrontDefrostOn
-                        onClicked: {
-                            frontDefrostPopup.isFrontDefrostOn = true
-                            console.log("Front Defrost turned ON")
-                        }
-                        background: Rectangle {
-                            color: enabled ? "#4caf50" : "#bdbdbd"
-                            radius: 25
-                        }
-                        contentItem: Text {
-                            text: parent.text
-                            font.family: "Inter"
-                            font.pixelSize: 18
-                            color: "#ffffff"
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                    }
-
-                    Button {
-                        text: "Turn Off"
-                        width: 150
-                        height: 50
-                        enabled: frontDefrostPopup.isFrontDefrostOn
-                        onClicked: {
-                            frontDefrostPopup.isFrontDefrostOn = false
-                            console.log("Front Defrost turned OFF")
-                        }
-                        background: Rectangle {
-                            color: enabled ? "#f44336" : "#bdbdbd"
-                            radius: 25
-                        }
-                        contentItem: Text {
-                            text: parent.text
-                            font.family: "Inter"
-                            font.pixelSize: 18
-                            color: "#ffffff"
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                    }
-                }
-
-                Button {
-                    text: "Close"
-                    width: 120
-                    height: 40
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.bottomMargin: 20
-                    onClicked: frontDefrostPopup.close()
-                    background: Rectangle {
-                        color: "transparent"
-                        border.color: Style.isDark ? "#757575" : "#bdbdbd"
-                        border.width: 1
-                        radius: 20
-                    }
-                    contentItem: Text {
-                        text: parent.text
+                    // Title for the toybox popup
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.topMargin: 20
+                        text: "Toybox"
                         font.family: "Inter"
-                        font.pixelSize: 16
-                        color: Style.isDark ? "#ffffff" : "#616161"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
+                        font.pixelSize: 24
+                        font.bold: Font.Medium
+                        color: Style.isDark ? "#ffffff" : "#212121"
+                    }
+
+                    // List of toybox features
+                    ListView {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Layout.margins: 20
+                        clip: true
+                        model: ["Chess", "Fart Sounds", "Santa Mode", "Light Show", "Sketchpad"]
+                        delegate: Button {
+                            width: parent.width
+                            height: 60
+                            text: modelData
+                            font.family: "Inter"
+                            font.pixelSize: 18
+                            // Handle selection of toybox features
+                            onClicked: {
+                                console.log("Toybox item selected:", modelData)
+                                logger.logMessage("Toybox: " + modelData + " selected")
+                                if (modelData === "Chess") {
+                                    console.log("Launching Chess game")
+                                } else if (modelData === "Fart Sounds") {
+                                    console.log("Playing funny sounds")
+                                } else if (modelData === "Santa Mode") {
+                                    console.log("Activating Santa Mode")
+                                } else if (modelData === "Light Show") {
+                                    console.log("Starting Light Show")
+                                } else if (modelData === "Sketchpad") {
+                                    console.log("Opening Sketchpad")
+                                }
+                            }
+                            // Button background with theme-based styling
+                            background: Rectangle {
+                                color: Style.isDark ? "#424242" : "#ffffff"
+                                radius: 10
+                                border.color: Style.isDark ? "#616161" : "#e0e0e0"
+                                border.width: 1
+                            }
+                            // Button text with theme-based color
+                            contentItem: Text {
+                                text: parent.text
+                                font: parent.font
+                                color: Style.isDark ? "#ffffff" : "#424242"
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                        }
+                    }
+
+                    // Close button for the popup
+                    Button {
+                        text: "Close"
+                        width: 120
+                        height: 40
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.bottomMargin: 20
+                        onClicked: toyboxPopup.close()
+                        // Transparent background with themed border
+                        background: Rectangle {
+                            color: "transparent"
+                            border.color: Style.isDark ? "#757575" : "#bdbdbd"
+                            border.width: 1
+                            radius: 20
+                        }
+                        // Button text with theme-based color
+                        contentItem: Text {
+                            text: parent.text
+                            font.family: "Inter"
+                            font.pixelSize: 16
+                            color: Style.isDark ? "#ffffff" : "#616161"
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
                     }
                 }
             }
         }
-    }
 
-    Popup {
-        id: rearDefrostPopup
-        anchors.centerIn: parent
-        width: 400
-        height: 300
-        modal: true
-        focus: true
-        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        // Front defrost control popup
+        Popup {
+            id: frontDefrostPopup
+            anchors.centerIn: parent
+            width: 400
+            height: 300
+            modal: true
+            focus: true
+            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
-        property bool isRearDefrostOn: false
+            // Property to track front defrost state
+            property bool isFrontDefrostOn: false
 
-        Rectangle {
-            anchors.fill: parent
-            color: Style.isDark ? "#212121" : "#fafafa"
-            radius: 20
-            border.color: Style.isDark ? "#424242" : "#e0e0e0"
-            border.width: 1
-
-            ColumnLayout {
+            // Background rectangle with theme-based styling
+            Rectangle {
                 anchors.fill: parent
-                spacing: 15
+                color: Style.isDark ? "#212121" : "#fafafa"
+                radius: 20
+                border.color: Style.isDark ? "#424242" : "#e0e0e0"
+                border.width: 1
 
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.topMargin: 20
-                    text: "Rear Defrost Control"
-                    font.family: "Inter"
-                    font.pixelSize: 24
-                    font.bold: Font.Medium
-                    color: Style.isDark ? "#ffffff" : "#212121"
-                }
+                // Main layout for front defrost controls
+                ColumnLayout {
+                    anchors.fill: parent
+                    spacing: 15
 
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    text: rearDefrostPopup.isRearDefrostOn ? "Rear Defrost: ON" : "Rear Defrost: OFF"
-                    font.family: "Inter"
-                    font.pixelSize: 18
-                    color: Style.isDark ? "#ffffff" : "#424242"
-                }
-
-                RowLayout {
-                    Layout.alignment: Qt.AlignHCenter
-                    spacing: 20
-
-                    Button {
-                        text: "Turn On"
-                        width: 150
-                        height: 50
-                        enabled: !rearDefrostPopup.isRearDefrostOn
-                        onClicked: {
-                            rearDefrostPopup.isRearDefrostOn = true
-                            console.log("Rear Defrost turned ON")
-                        }
-                        background: Rectangle {
-                            color: enabled ? "#4caf50" : "#bdbdbd"
-                            radius: 25
-                        }
-                        contentItem: Text {
-                            text: parent.text
-                            font.family: "Inter"
-                            font.pixelSize: 18
-                            color: "#ffffff"
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                    }
-
-                    Button {
-                        text: "Turn Off"
-                        width: 150
-                        height: 50
-                        enabled: rearDefrostPopup.isRearDefrostOn
-                        onClicked: {
-                            rearDefrostPopup.isRearDefrostOn = false
-                            console.log("Rear Defrost turned OFF")
-                        }
-                        background: Rectangle {
-                            color: enabled ? "#f44336" : "#bdbdbd"
-                            radius: 25
-                        }
-                        contentItem: Text {
-                            text: parent.text
-                            font.family: "Inter"
-                            font.pixelSize: 18
-                            color: "#ffffff"
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                    }
-                }
-
-                Button {
-                    text: "Close"
-                    width: 120
-                    height: 40
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.bottomMargin: 20
-                    onClicked: rearDefrostPopup.close()
-                    background: Rectangle {
-                        color: "transparent"
-                        border.color: Style.isDark ? "#757575" : "#bdbdbd"
-                        border.width: 1
-                        radius: 20
-                    }
-                    contentItem: Text {
-                        text: parent.text
+                    // Title for the front defrost popup
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.topMargin: 20
+                        text: "Front Defrost Control"
                         font.family: "Inter"
-                        font.pixelSize: 16
-                        color: Style.isDark ? "#ffffff" : "#616161"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
+                        font.pixelSize: 24
+                        font.bold: Font.Medium
+                        color: Style.isDark ? "#ffffff" : "#212121"
+                    }
+
+                    // Display current front defrost state
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: frontDefrostPopup.isFrontDefrostOn ? "Front Defrost: ON" : "Front Defrost: OFF"
+                        font.family: "Inter"
+                        font.pixelSize: 18
+                        color: Style.isDark ? "#ffffff" : "#424242"
+                    }
+
+                    // Buttons for controlling front defrost
+                    RowLayout {
+                        Layout.alignment: Qt.AlignHCenter
+                        spacing: 20
+
+                        // Turn on front defrost
+                        Button {
+                            text: "Turn On"
+                            width: 150
+                            height: 50
+                            enabled: !frontDefrostPopup.isFrontDefrostOn
+                            onClicked: {
+                                frontDefrostPopup.isFrontDefrostOn = true
+                                console.log("Front Defrost turned ON")
+                                logger.logMessage("Front Defrost turned ON")
+                            }
+                            // Button background with enabled/disabled styling
+                            background: Rectangle {
+                                color: enabled ? "#4caf50" : "#bdbdbd"
+                                radius: 25
+                            }
+                            // Button text
+                            contentItem: Text {
+                                text: parent.text
+                                font.family: "Inter"
+                                font.pixelSize: 18
+                                color: "#ffffff"
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                        }
+
+                        // Turn off front defrost
+                        Button {
+                            text: "Turn Off"
+                            width: 150
+                            height: 50
+                            enabled: frontDefrostPopup.isFrontDefrostOn
+                            onClicked: {
+                                frontDefrostPopup.isFrontDefrostOn = false
+                                console.log("Front Defrost turned OFF")
+                                logger.logMessage("Front Defrost turned OFF")
+                            }
+                            // Button background with enabled/disabled styling
+                            background: Rectangle {
+                                color: enabled ? "#f44336" : "#bdbdbd"
+                                radius: 25
+                            }
+                            // Button text
+                            contentItem: Text {
+                                text: parent.text
+                                font.family: "Inter"
+                                font.pixelSize: 18
+                                color: "#ffffff"
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                        }
+                    }
+
+                    // Close button for the popup
+                    Button {
+                        text: "Close"
+                        width: 120
+                        height: 40
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.bottomMargin: 20
+                        onClicked: frontDefrostPopup.close()
+                        // Transparent background with themed border
+                        background: Rectangle {
+                            color: "transparent"
+                            border.color: Style.isDark ? "#757575" : "#bdbdbd"
+                            border.width: 1
+                            radius: 20
+                        }
+                        // Button text with theme-based color
+                        contentItem: Text {
+                            text: parent.text
+                            font.family: "Inter"
+                            font.pixelSize: 16
+                            color: Style.isDark ? "#ffffff" : "#616161"
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
                     }
                 }
             }
         }
-    }
 
-    Popup {
-        id: leftSeatPopup
-        anchors.centerIn: parent
-        width: 400
-        height: 300
-        modal: true
-        focus: true
-        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        // Rear defrost control popup
+        Popup {
+            id: rearDefrostPopup
+            anchors.centerIn: parent
+            width: 400
+            height: 300
+            modal: true
+            focus: true
+            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
-        property bool isLeftSeatHeaterOn: false
+            // Property to track rear defrost state
+            property bool isRearDefrostOn: false
 
-        Rectangle {
-            anchors.fill: parent
-            color: Style.isDark ? "#212121" : "#fafafa"
-            radius: 20
-            border.color: Style.isDark ? "#424242" : "#e0e0e0"
-            border.width: 1
-
-            ColumnLayout {
+            // Background rectangle with theme-based styling
+            Rectangle {
                 anchors.fill: parent
-                spacing: 15
+                color: Style.isDark ? "#212121" : "#fafafa"
+                radius: 20
+                border.color: Style.isDark ? "#424242" : "#e0e0e0"
+                border.width: 1
 
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.topMargin: 20
-                    text: "Left Seat Heater"
-                    font.family: "Inter"
-                    font.pixelSize: 24
-                    font.bold: Font.Medium
-                    color: Style.isDark ? "#ffffff" : "#212121"
-                }
+                // Main layout for rear defrost controls
+                ColumnLayout {
+                    anchors.fill: parent
+                    spacing: 15
 
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    text: leftSeatPopup.isLeftSeatHeaterOn ? "Left Seat Heater: ON" : "Left Seat Heater: OFF"
-                    font.family: "Inter"
-                    font.pixelSize: 18
-                    color: Style.isDark ? "#ffffff" : "#424242"
-                }
-
-                RowLayout {
-                    Layout.alignment: Qt.AlignHCenter
-                    spacing: 20
-
-                    Button {
-                        text: "Turn On"
-                        width: 150
-                        height: 50
-                        enabled: !leftSeatPopup.isLeftSeatHeaterOn
-                        onClicked: {
-                            leftSeatPopup.isLeftSeatHeaterOn = true
-                            console.log("Left Seat Heater turned ON")
-                        }
-                        background: Rectangle {
-                            color: enabled ? "#4caf50" : "#bdbdbd"
-                            radius: 25
-                        }
-                        contentItem: Text {
-                            text: parent.text
-                            font.family: "Inter"
-                            font.pixelSize: 18
-                            color: "#ffffff"
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                    }
-
-                    Button {
-                        text: "Turn Off"
-                        width: 150
-                        height: 50
-                        enabled: leftSeatPopup.isLeftSeatHeaterOn
-                        onClicked: {
-                            leftSeatPopup.isLeftSeatHeaterOn = false
-                            console.log("Left Seat Heater turned OFF")
-                        }
-                        background: Rectangle {
-                            color: enabled ? "#f44336" : "#bdbdbd"
-                            radius: 25
-                        }
-                        contentItem: Text {
-                            text: parent.text
-                            font.family: "Inter"
-                            font.pixelSize: 18
-                            color: "#ffffff"
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                    }
-                }
-
-                Button {
-                    text: "Close"
-                    width: 120
-                    height: 40
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.bottomMargin: 20
-                    onClicked: leftSeatPopup.close()
-                    background: Rectangle {
-                        color: "transparent"
-                        border.color: Style.isDark ? "#757575" : "#bdbdbd"
-                        border.width: 1
-                        radius: 20
-                    }
-                    contentItem: Text {
-                        text: parent.text
+                    // Title for the rear defrost popup
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.topMargin: 20
+                        text: "Rear Defrost Control"
                         font.family: "Inter"
-                        font.pixelSize: 16
-                        color: Style.isDark ? "#ffffff" : "#616161"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
+                        font.pixelSize: 24
+                        font.bold: Font.Medium
+                        color: Style.isDark ? "#ffffff" : "#212121"
+                    }
+
+                    // Display current rear defrost state
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: rearDefrostPopup.isRearDefrostOn ? "Rear Defrost: ON" : "Rear Defrost: OFF"
+                        font.family: "Inter"
+                        font.pixelSize: 18
+                        color: Style.isDark ? "#ffffff" : "#424242"
+                    }
+
+                    // Buttons for controlling rear defrost
+                    RowLayout {
+                        Layout.alignment: Qt.AlignHCenter
+                        spacing: 20
+
+                        // Turn on rear defrost
+                        Button {
+                            text: "Turn On"
+                            width: 150
+                            height: 50
+                            enabled: !rearDefrostPopup.isRearDefrostOn
+                            onClicked: {
+                                rearDefrostPopup.isRearDefrostOn = true
+                                console.log("Rear Defrost turned ON")
+                                logger.logMessage("Rear Defrost turned ON")
+                            }
+                            // Button background with enabled/disabled styling
+                            background: Rectangle {
+                                color: enabled ? "#4caf50" : "#bdbdbd"
+                                radius: 25
+                            }
+                            // Button text
+                            contentItem: Text {
+                                text: parent.text
+                                font.family: "Inter"
+                                font.pixelSize: 18
+                                color: "#ffffff"
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                        }
+
+                        // Turn off rear defrost
+                        Button {
+                            text: "Turn Off"
+                            width: 150
+                            height: 50
+                            enabled: rearDefrostPopup.isRearDefrostOn
+                            onClicked: {
+                                rearDefrostPopup.isRearDefrostOn = false
+                                console.log("Rear Defrost turned OFF")
+                                logger.logMessage("Rear Defrost turned OFF")
+                            }
+                            // Button background with enabled/disabled styling
+                            background: Rectangle {
+                                color: enabled ? "#f44336" : "#bdbdbd"
+                                radius: 25
+                            }
+                            // Button text
+                            contentItem: Text {
+                                text: parent.text
+                                font.family: "Inter"
+                                font.pixelSize: 18
+                                color: "#ffffff"
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                        }
+                    }
+
+                    // Close button for the popup
+                    Button {
+                        text: "Close"
+                        width: 120
+                        height: 40
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.bottomMargin: 20
+                        onClicked: rearDefrostPopup.close()
+                        // Transparent background with themed border
+                        background: Rectangle {
+                            color: "transparent"
+                            border.color: Style.isDark ? "#757575" : "#bdbdbd"
+                            border.width: 1
+                            radius: 20
+                        }
+                        // Button text with theme-based color
+                        contentItem: Text {
+                            text: parent.text
+                            font.family: "Inter"
+                            font.pixelSize: 16
+                            color: Style.isDark ? "#ffffff" : "#616161"
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
                     }
                 }
             }
         }
-    }
 
-    Popup {
-        id: heatedSteeringPopup
-        anchors.centerIn: parent
-        width: 400
-        height: 300
-        modal: true
-        focus: true
-        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        // Left seat heater control popup
+        Popup {
+            id: leftSeatPopup
+            anchors.centerIn: parent
+            width: 400
+            height: 300
+            modal: true
+            focus: true
+            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
-        property bool isHeatedSteeringOn: false
+            // Property to track left seat heater state
+            property bool isLeftSeatHeaterOn: false
 
-        Rectangle {
-            anchors.fill: parent
-            color: Style.isDark ? "#212121" : "#fafafa"
-            radius: 20
-            border.color: Style.isDark ? "#424242" : "#e0e0e0"
-            border.width: 1
-
-            ColumnLayout {
+            // Background rectangle with theme-based styling
+            Rectangle {
                 anchors.fill: parent
-                spacing: 15
+                color: Style.isDark ? "#212121" : "#fafafa"
+                radius: 20
+                border.color: Style.isDark ? "#424242" : "#e0e0e0"
+                border.width: 1
 
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.topMargin: 20
-                    text: "Heated Steering Control"
-                    font.family: "Inter"
-                    font.pixelSize: 24
-                    font.bold: Font.Medium
-                    color: Style.isDark ? "#ffffff" : "#212121"
-                }
+                // Main layout for left seat heater controls
+                ColumnLayout {
+                    anchors.fill: parent
+                    spacing: 15
 
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    text: heatedSteeringPopup.isHeatedSteeringOn ? "Heated Steering: ON" : "Heated Steering: OFF"
-                    font.family: "Inter"
-                    font.pixelSize: 18
-                    color: Style.isDark ? "#ffffff" : "#424242"
-                }
-
-                RowLayout {
-                    Layout.alignment: Qt.AlignHCenter
-                    spacing: 20
-
-                    Button {
-                        text: "Turn On"
-                        width: 150
-                        height: 50
-                        enabled: !heatedSteeringPopup.isHeatedSteeringOn
-                        onClicked: {
-                            heatedSteeringPopup.isHeatedSteeringOn = true
-                            console.log("Heated Steering turned ON")
-                        }
-                        background: Rectangle {
-                            color: enabled ? "#4caf50" : "#bdbdbd"
-                            radius: 25
-                        }
-                        contentItem: Text {
-                            text: parent.text
-                            font.family: "Inter"
-                            font.pixelSize: 18
-                            color: "#ffffff"
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                    }
-
-                    Button {
-                        text: "Turn Off"
-                        width: 150
-                        height: 50
-                        enabled: heatedSteeringPopup.isHeatedSteeringOn
-                        onClicked: {
-                            heatedSteeringPopup.isHeatedSteeringOn = false
-                            console.log("Heated Steering turned OFF")
-                        }
-                        background: Rectangle {
-                            color: enabled ? "#f44336" : "#bdbdbd"
-                            radius: 25
-                        }
-                        contentItem: Text {
-                            text: parent.text
-                            font.family: "Inter"
-                            font.pixelSize: 18
-                            color: "#ffffff"
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                    }
-                }
-
-                Button {
-                    text: "Close"
-                    width: 120
-                    height: 40
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.bottomMargin: 20
-                    onClicked: heatedSteeringPopup.close()
-                    background: Rectangle {
-                        color: "transparent"
-                        border.color: Style.isDark ? "#757575" : "#bdbdbd"
-                        border.width: 1
-                        radius: 20
-                    }
-                    contentItem: Text {
-                        text: parent.text
+                    // Title for the left seat heater popup
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.topMargin: 20
+                        text: "Left Seat Heater"
                         font.family: "Inter"
-                        font.pixelSize: 16
-                        color: Style.isDark ? "#ffffff" : "#616161"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
+                        font.pixelSize: 24
+                        font.bold: Font.Medium
+                        color: Style.isDark ? "#ffffff" : "#212121"
+                    }
+
+                    // Display current left seat heater state
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: leftSeatPopup.isLeftSeatHeaterOn ? "Left Seat Heater: ON" : "Left Seat Heater: OFF"
+                        font.family: "Inter"
+                        font.pixelSize: 18
+                        color: Style.isDark ? "#ffffff" : "#424242"
+                    }
+
+                    // Buttons for controlling left seat heater
+                    RowLayout {
+                        Layout.alignment: Qt.AlignHCenter
+                        spacing: 20
+
+                        // Turn on left seat heater
+                        Button {
+                            text: "Turn On"
+                            width: 150
+                            height: 50
+                            enabled: !leftSeatPopup.isLeftSeatHeaterOn
+                            onClicked: {
+                                leftSeatPopup.isLeftSeatHeaterOn = true
+                                console.log("Left Seat Heater turned ON")
+                                logger.logMessage("Left Seat Heater turned ON")
+                            }
+                            // Button background with enabled/disabled styling
+                            background: Rectangle {
+                                color: enabled ? "#4caf50" : "#bdbdbd"
+                                radius: 25
+                            }
+                            // Button text
+                            contentItem: Text {
+                                text: parent.text
+                                font.family: "Inter"
+                                font.pixelSize: 18
+                                color: "#ffffff"
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                        }
+
+                        // Turn off left seat heater
+                        Button {
+                            text: "Turn Off"
+                            width: 150
+                            height: 50
+                            enabled: leftSeatPopup.isLeftSeatHeaterOn
+                            onClicked: {
+                                leftSeatPopup.isLeftSeatHeaterOn = false
+                                console.log("Left Seat Heater turned OFF")
+                                logger.logMessage("Left Seat Heater turned OFF")
+                            }
+                            // Button background with enabled/disabled styling
+                            background: Rectangle {
+                                color: enabled ? "#f44336" : "#bdbdbd"
+                                radius: 25
+                            }
+                            // Button text
+                            contentItem: Text {
+                                text: parent.text
+                                font.family: "Inter"
+                                font.pixelSize: 18
+                                color: "#ffffff"
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                        }
+                    }
+
+                    // Close button for the popup
+                    Button {
+                        text: "Close"
+                        width: 120
+                        height: 40
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.bottomMargin: 20
+                        onClicked: leftSeatPopup.close()
+                        // Transparent background with themed border
+                        background: Rectangle {
+                            color: "transparent"
+                            border.color: Style.isDark ? "#757575" : "#bdbdbd"
+                            border.width: 1
+                            radius: 20
+                        }
+                        // Button text with theme-based color
+                        contentItem: Text {
+                            text: parent.text
+                            font.family: "Inter"
+                            font.pixelSize: 16
+                            color: Style.isDark ? "#ffffff" : "#616161"
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
                     }
                 }
             }
         }
-    }
 
-    Popup {
-        id: wipersPopup
-        anchors.centerIn: parent
-        width: 400
-        height: 300
-        modal: true
-        focus: true
-        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        // Heated steering wheel control popup
+        Popup {
+            id: heatedSteeringPopup
+            anchors.centerIn: parent
+            width: 400
+            height: 300
+            modal: true
+            focus: true
+            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
-        property bool areWipersOn: false
+            // Property to track heated steering wheel state
+            property bool isHeatedSteeringOn: false
 
-        Rectangle {
-            anchors.fill: parent
-            color: Style.isDark ? "#212121" : "#fafafa"
-            radius: 20
-            border.color: Style.isDark ? "#424242" : "#e0e0e0"
-            border.width: 1
-
-            ColumnLayout {
+            // Background rectangle with theme-based styling
+            Rectangle {
                 anchors.fill: parent
-                spacing: 15
+                color: Style.isDark ? "#212121" : "#fafafa"
+                radius: 20
+                border.color: Style.isDark ? "#424242" : "#e0e0e0"
+                border.width: 1
 
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.topMargin: 20
-                    text: "Wiper Control"
-                    font.family: "Inter"
-                    font.pixelSize: 24
-                    font.bold: Font.Medium
-                    color: Style.isDark ? "#ffffff" : "#212121"
-                }
+                // Main layout for heated steering wheel controls
+                ColumnLayout {
+                    anchors.fill: parent
+                    spacing: 15
 
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    text: wipersPopup.areWipersOn ? "Wipers: ON" : "Wipers: OFF"
-                    font.family: "Inter"
-                    font.pixelSize: 18
-                    color: Style.isDark ? "#ffffff" : "#424242"
-                }
-
-                RowLayout {
-                    Layout.alignment: Qt.AlignHCenter
-                    spacing: 20
-
-                    Button {
-                        text: "Turn On"
-                        width: 150
-                        height: 50
-                        enabled: !wipersPopup.areWipersOn
-                        onClicked: {
-                            wipersPopup.areWipersOn = true
-                            console.log("Wipers turned ON")
-                        }
-                        background: Rectangle {
-                            color: enabled ? "#4caf50" : "#bdbdbd"
-                            radius: 25
-                        }
-                        contentItem: Text {
-                            text: parent.text
-                            font.family: "Inter"
-                            font.pixelSize: 18
-                            color: "#ffffff"
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                    }
-
-                    Button {
-                        text: "Turn Off"
-                        width: 150
-                        height: 50
-                        enabled: wipersPopup.areWipersOn
-                        onClicked: {
-                            wipersPopup.areWipersOn = false
-                            console.log("Wipers turned OFF")
-                        }
-                        background: Rectangle {
-                            color: enabled ? "#f44336" : "#bdbdbd"
-                            radius: 25
-                        }
-                        contentItem: Text {
-                            text: parent.text
-                            font.family: "Inter"
-                            font.pixelSize: 18
-                            color: "#ffffff"
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                    }
-                }
-
-                Button {
-                    text: "Close"
-                    width: 120
-                    height: 40
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.bottomMargin: 20
-                    onClicked: wipersPopup.close()
-                    background: Rectangle {
-                        color: "transparent"
-                        border.color: Style.isDark ? "#757575" : "#bdbdbd"
-                        border.width: 1
-                        radius: 20
-                    }
-                    contentItem: Text {
-                        text: parent.text
+                    // Title for the heated steering popup
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.topMargin: 20
+                        text: "Heated Steering Control"
                         font.family: "Inter"
-                        font.pixelSize: 16
-                        color: Style.isDark ? "#ffffff" : "#616161"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
+                        font.pixelSize: 24
+                        font.bold: Font.Medium
+                        color: Style.isDark ? "#ffffff" : "#212121"
+                    }
+
+                    // Display current heated steering state
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: heatedSteeringPopup.isHeatedSteeringOn ? "Heated Steering: ON" : "Heated Steering: OFF"
+                        font.family: "Inter"
+                        font.pixelSize: 18
+                        color: Style.isDark ? "#ffffff" : "#424242"
+                    }
+
+                    // Buttons for controlling heated steering
+                    RowLayout {
+                        Layout.alignment: Qt.AlignHCenter
+                        spacing: 20
+
+                        // Turn on heated steering
+                        Button {
+                            text: "Turn On"
+                            width: 150
+                            height: 50
+                            enabled: !heatedSteeringPopup.isHeatedSteeringOn
+                            onClicked: {
+                                heatedSteeringPopup.isHeatedSteeringOn = true
+                                console.log("Heated Steering turned ON")
+                                logger.logMessage("Heated Steering turned ON")
+                            }
+                            // Button background with enabled/disabled styling
+                            background: Rectangle {
+                                color: enabled ? "#4caf50" : "#bdbdbd"
+                                radius: 25
+                            }
+                            // Button text
+                            contentItem: Text {
+                                text: parent.text
+                                font.family: "Inter"
+                                font.pixelSize: 18
+                                color: "#ffffff"
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                        }
+
+                        // Turn off heated steering
+                        Button {
+                            text: "Turn Off"
+                            width: 150
+                            height: 50
+                            enabled: heatedSteeringPopup.isHeatedSteeringOn
+                            onClicked: {
+                                heatedSteeringPopup.isHeatedSteeringOn = false
+                                console.log("Heated Steering turned OFF")
+                                logger.logMessage("Heated Steering turned OFF")
+                            }
+                            // Button background with enabled/disabled styling
+                            background: Rectangle {
+                                color: enabled ? "#f44336" : "#bdbdbd"
+                                radius: 25
+                            }
+                            // Button text
+                            contentItem: Text {
+                                text: parent.text
+                                font.family: "Inter"
+                                font.pixelSize: 18
+                                color: "#ffffff"
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                        }
+                    }
+
+                    // Close button for the popup
+                    Button {
+                        text: "Close"
+                        width: 120
+                        height: 40
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.bottomMargin: 20
+                        onClicked: heatedSteeringPopup.close()
+                        // Transparent background with themed border
+                        background: Rectangle {
+                            color: "transparent"
+                            border.color: Style.isDark ? "#757575" : "#bdbdbd"
+                            border.width: 1
+                            radius: 20
+                        }
+                        // Button text with theme-based color
+                        contentItem: Text {
+                            text: parent.text
+                            font.family: "Inter"
+                            font.pixelSize: 16
+                            color: Style.isDark ? "#ffffff" : "#616161"
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+                }
+            }
+        }
+
+        // Windshield wiper control popup
+        Popup {
+            id: wipersPopup
+            anchors.centerIn: parent
+            width: 400
+            height: 300
+            modal: true
+            focus: true
+            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+            // Property to track wiper state
+            property bool areWipersOn: false
+
+            // Background rectangle with theme-based styling
+            Rectangle {
+                anchors.fill: parent
+                color: Style.isDark ? "#212121" : "#fafafa"
+                radius: 20
+                border.color: Style.isDark ? "#424242" : "#e0e0e0"
+                border.width: 1
+
+                // Main layout for wiper controls
+                ColumnLayout {
+                    anchors.fill: parent
+                    spacing: 15
+
+                    // Title for the wiper popup
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.topMargin: 20
+                        text: "Wiper Control"
+                        font.family: "Inter"
+                        font.pixelSize: 24
+                        font.bold: Font.Medium
+                        color: Style.isDark ? "#ffffff" : "#212121"
+                    }
+
+                    // Display current wiper state
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: wipersPopup.areWipersOn ? "Wipers: ON" : "Wipers: OFF"
+                        font.family: "Inter"
+                        font.pixelSize: 18
+                        color: Style.isDark ? "#ffffff" : "#424242"
+                    }
+
+                    // Buttons for controlling wipers
+                    RowLayout {
+                        Layout.alignment: Qt.AlignHCenter
+                        spacing: 20
+
+                        // Turn on wipers
+                        Button {
+                            text: "Turn On"
+                            width: 150
+                            height: 50
+                            enabled: !wipersPopup.areWipersOn
+                            onClicked: {
+                                wipersPopup.areWipersOn = true
+                                console.log("Wipers turned ON")
+                                logger.logMessage("Wipers turned ON")
+                            }
+                            // Button background with enabled/disabled styling
+                            background: Rectangle {
+                                color: enabled ? "#4caf50" : "#bdbdbd"
+                                radius: 25
+                            }
+                            // Button text
+                            contentItem: Text {
+                                text: parent.text
+                                font.family: "Inter"
+                                font.pixelSize: 18
+                                color: "#ffffff"
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                        }
+
+                        // Turn off wipers
+                        Button {
+                            text: "Turn Off"
+                            width: 150
+                            height: 50
+                            enabled: wipersPopup.areWipersOn
+                            onClicked: {
+                                wipersPopup.areWipersOn = false
+                                console.log("Wipers turned OFF")
+                                logger.logMessage("Wipers turned OFF")
+                            }
+                            // Button background with enabled/disabled styling
+                            background: Rectangle {
+                                color: enabled ? "#f44336" : "#bdbdbd"
+                                radius: 25
+                            }
+                            // Button text
+                            contentItem: Text {
+                                text: parent.text
+                                font.family: "Inter"
+                                font.pixelSize: 18
+                                color: "#ffffff"
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                        }
+                    }
+
+                    // Close button for the popup
+                    Button {
+                        text: "Close"
+                        width: 120
+                        height: 40
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.bottomMargin: 20
+                        onClicked: wipersPopup.close()
+                        // Transparent background with themed border
+                        background: Rectangle {
+                            color: "transparent"
+                            border.color: Style.isDark ? "#757575" : "#bdbdbd"
+                            border.width: 1
+                            radius: 20
+                        }
+                        // Button text with theme-based color
+                        contentItem: Text {
+                            text: parent.text
+                            font.family: "Inter"
+                            font.pixelSize: 16
+                            color: Style.isDark ? "#ffffff" : "#616161"
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
                     }
                 }
             }
         }
     }
-}
