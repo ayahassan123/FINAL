@@ -1708,247 +1708,262 @@ ApplicationWindow {
             }
         }
     }
+    // Calendar popup for date selection, mimicking mobile/laptop calendar with dynamic day highlighting
+        Popup {
+            id: calendarPopup
+            anchors.centerIn: parent
+            width: 500
+            height: 600
+            modal: true
+            focus: true
+            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
-    // Calendar popup
-    Popup {
-        id: calendarPopup
-        anchors.centerIn: parent
-        width: 500
-        height: 600
-        modal: true
-        focus: true
-        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+            property int selectedDay: -1
+            property var currentDate: new Date(2025, 6, 26, 19, 29) // Updated to current date and time: 07:29 PM EEST, June 26, 2025
+            property int displayMonth: 0 // Setting default month to July (adjusted index 0 in new order)
+            property int displayYear: 2025 // Setting default year to 2025
 
-        property int selectedDay: -1
-        property var currentDate: new Date()
-
-        Rectangle {
-            anchors.fill: parent
-            color: Style.isDark ? "#212121" : "#fafafa"
-            radius: 20
-            border.color: Style.isDark ? "#424242" : "#e0e0e0"
-            border.width: 1
-
-            ColumnLayout {
+            Rectangle {
                 anchors.fill: parent
-                spacing: 15
+                color: Style.isDark ? "#212121" : "#fafafa" // Adjusting background color based on dark/light mode
+                radius: 20
+                border.color: Style.isDark ? "#424242" : "#e0e0e0" // Adjusting border color based on dark/light mode
+                border.width: 1
 
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.topMargin: 20
-                    text: "Calendar"
-                    font.family: "Inter"
-                    font.pixelSize: 24
-                    font.bold: Font.Medium
-                    color: Style.isDark ? "#ffffff" : "#212121"
-                }
+                ColumnLayout {
+                    anchors.fill: parent
+                    spacing: 15
 
-                RowLayout {
-                    Layout.alignment: Qt.AlignHCenter
-                    spacing: 20
-
-                    ComboBox {
-                        id: monthSelector
-                        width: 150
-                        model: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
-                        currentIndex: currentDate.getMonth()
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.topMargin: 20
+                        text: "Calendar" // Displaying the calendar title
                         font.family: "Inter"
-                        font.pixelSize: 18
-                        onCurrentIndexChanged: updateDays()
+                        font.pixelSize: 24
+                        font.bold: Font.Medium
+                        color: Style.isDark ? "#ffffff" : "#212121" // Adjusting text color based on dark/light mode
                     }
 
-                    ComboBox {
-                        id: yearSelector
-                        width: 100
-                        model: ListModel {
-                            id: yearModel
-                        }
-                        currentIndex: 0
-                        font.family: "Inter"
-                        font.pixelSize: 18
-                        Component.onCompleted: {
-                            for (var i = 2020; i <= 2030; i++) {
-                                yearModel.append({ "text": i })
-                            }
-                            currentIndex = yearModel.findIndex(function(item) { return item.text === currentDate.getFullYear(); }) || 0;
-                        }
-                        onCurrentIndexChanged: updateDays()
-                    }
-                }
+                    RowLayout {
+                        Layout.alignment: Qt.AlignHCenter
+                        spacing: 20
 
-                GridLayout {
-                    id: daysGrid
-                    columns: 7
-                    rowSpacing: 10
-                    columnSpacing: 10
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-                    Layout.margins: 20
-
-                    Repeater {
-                        model: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-                        Text {
-                            Layout.fillWidth: true
-                            text: modelData
+                        ComboBox {
+                            id: monthSelector
+                            width: 150
+                            model: ["July", "August", "September", "October", "November", "December", "January", "February", "March", "April", "May", "June"]
+                            currentIndex: displayMonth // Ensuring initial display is July (index 0 in new order)
                             font.family: "Inter"
-                            font.pixelSize: 14
-                            horizontalAlignment: Text.AlignHCenter
-                            color: Style.isDark ? "#ffffff" : "#212121"
+                            font.pixelSize: 18
+                            Component.onCompleted: {
+                                currentIndex = displayMonth; // Ensuring July is selected on startup
+                            }
+                            displayText: currentIndex >= 0 ? model[currentIndex] : "July" // Displaying "July" as default, showing selected month otherwise
+                            onCurrentIndexChanged: {
+                                displayMonth = currentIndex; // Updating display month when changed
+                                updateDays(); // Refreshing days display
+                            }
+                        }
+
+                        ComboBox {
+                            id: yearSelector
+                            width: 100
+                            model: ListModel {
+                                id: yearModel
+                                Component.onCompleted: {
+                                    for (var i = 1990; i <= 2040; i++) {
+                                        yearModel.append({ "text": i }) // Populating year model from 1990 to 2040
+                                    }
+                                    currentIndex = yearModel.findIndex(function(item) { return item.text === displayYear; }) || 0; // Setting default to 2025
+                                }
+                            }
+                            currentIndex: yearModel.findIndex(function(item) { return item.text === displayYear; }) || 0
+                            font.family: "Inter"
+                            font.pixelSize: 18
+                            displayText: currentIndex >= 0 ? yearModel.get(currentIndex).text : "2025" // Displaying "2025" as default, showing selected year otherwise
+                            onCurrentIndexChanged: {
+                                displayYear = yearModel.get(currentIndex).text; // Updating display year when changed
+                                updateDays(); // Refreshing days display
+                            }
                         }
                     }
 
-                    Repeater {
-                        id: daysRepeater
-                        model: 0
-                        Item {
-                            width: 50
-                            height: 50
+                    GridLayout {
+                        id: daysGrid
+                        columns: 7
+                        rowSpacing: 10
+                        columnSpacing: 10
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+                        Layout.margins: 20
 
-                            Button {
-                                id: dayButton
-                                anchors.fill: parent
-                                text: index + 1
+                        Repeater {
+                            model: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                            Text {
+                                Layout.fillWidth: true
+                                text: modelData // Displaying day names
                                 font.family: "Inter"
-                                font.pixelSize: 18
-                                onClicked: {
-                                    calendarPopup.selectedDay = index + 1;
-                                }
+                                font.pixelSize: 14
+                                horizontalAlignment: Text.AlignHCenter
+                                color: Style.isDark ? "#ffffff" : "#212121" // Adjusting text color based on dark/light mode
+                            }
+                        }
 
-                                background: Item {
+                        Repeater {
+                            id: daysRepeater
+                            model: 31 // Setting model to 31 days for July
+                            Item {
+                                width: 50
+                                height: 50
+
+                                Button {
+                                    id: dayButton
                                     anchors.fill: parent
-
-                                    Rectangle {
-                                        id: dayBackground
-                                        anchors.fill: parent
-                                        color: {
-                                            var dayDate = new Date(yearSelector.currentText, monthSelector.currentIndex, index + 1);
-                                            var today = new Date();
-
-                                            dayDate.setHours(0,0,0,0);
-                                            today.setHours(0,0,0,0);
-
-                                            if (dayDate.getTime() === today.getTime()) {
-                                                return "#4CAF50";
-                                            } else if (calendarPopup.selectedDay === index + 1) {
-                                                return "#4CAF50";
-                                            } else {
-                                                return Style.isDark ? "#424242" : "#ffffff";
-                                            }
-                                        }
-                                        radius: 25
-                                        border.color: Style.isDark ? "#616161" : "#e0e0e0"
-                                        border.width: 1
+                                    text: index + 1 // Displaying day number
+                                    font.family: "Inter"
+                                    font.pixelSize: 18
+                                    onClicked: {
+                                        calendarPopup.selectedDay = index + 1; // Setting selected day on click
                                     }
 
-                                    Rectangle {
-                                        anchors.centerIn: parent
-                                        width: 40
-                                        height: 40
-                                        radius: 20
-                                        color: "transparent"
-                                        border.color: {
-                                            var dayDate = new Date(yearSelector.currentText, monthSelector.currentIndex, index + 1);
-                                            var today = new Date();
+                                    background: Item {
+                                        anchors.fill: parent
 
-                                            dayDate.setHours(0,0,0,0);
-                                            today.setHours(0,0,0,0);
+                                        Rectangle {
+                                            id: dayBackground
+                                            anchors.fill: parent
+                                            color: {
+                                                var dayDate = new Date(displayYear, displayMonth, index + 1); // Calculating date for the day
+                                                var today = new Date(currentDate); // Getting current date
+
+                                                dayDate.setHours(0, 0, 0, 0);
+                                                today.setHours(0, 0, 0, 0);
+
+                                                if (dayDate.getTime() === today.getTime()) {
+                                                    return "#4CAF50"; // Highlighting current day with green
+                                                } else if (calendarPopup.selectedDay === index + 1) {
+                                                    return "#4CAF50"; // Highlighting selected day with green
+                                                } else {
+                                                    return Style.isDark ? "#424242" : "#ffffff"; // Default background color
+                                                }
+                                            }
+                                            radius: 25
+                                            border.color: Style.isDark ? "#616161" : "#e0e0e0" // Adjusting border color based on dark/light mode
+                                            border.width: 1
+                                        }
+
+                                        Rectangle {
+                                            anchors.centerIn: parent
+                                            width: 40
+                                            height: 40
+                                            radius: 20
+                                            color: "transparent"
+                                            border.color: {
+                                                var dayDate = new Date(displayYear, displayMonth, index + 1); // Calculating date for the day
+                                                var today = new Date(currentDate); // Getting current date
+
+                                                dayDate.setHours(0, 0, 0, 0);
+                                                today.setHours(0, 0, 0, 0);
+
+                                                if (dayDate.getTime() === today.getTime() || calendarPopup.selectedDay === index + 1) {
+                                                    return "#ffffff"; // Adding white border for current/selected day
+                                                } else {
+                                                    return "transparent";
+                                                }
+                                            }
+                                            border.width: 2
+                                            visible: border.color !== "transparent"
+                                        }
+                                    }
+
+                                    contentItem: Text {
+                                        text: parent.text
+                                        font: parent.font
+                                        color: {
+                                            var dayDate = new Date(displayYear, displayMonth, index + 1); // Calculating date for the day
+                                            var today = new Date(currentDate); // Getting current date
+
+                                            dayDate.setHours(0, 0, 0, 0);
+                                            today.setHours(0, 0, 0, 0);
 
                                             if (dayDate.getTime() === today.getTime() || calendarPopup.selectedDay === index + 1) {
-                                                return "#ffffff";
+                                                return "#2196F3"; // Sky blue text for current/selected day (changed from #ffffff)
                                             } else {
-                                                return "transparent";
+                                                return Style.isDark ? "#ffffff" : "#424242"; // Default text color based on dark/light mode
                                             }
                                         }
-                                        border.width: 2
-                                        visible: border.color !== "transparent"
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
                                     }
-                                }
-
-                                contentItem: Text {
-                                    text: parent.text
-                                    font: parent.font
-                                    color: {
-                                        var dayDate = new Date(yearSelector.currentText, monthSelector.currentIndex, index + 1);
-                                        var today = new Date();
-
-                                        dayDate.setHours(0,0,0,0);
-                                        today.setHours(0,0,0,0);
-
-                                        if (dayDate.getTime() === today.getTime() || calendarPopup.selectedDay === index + 1) {
-                                            return "#ffffff";
-                                        } else {
-                                            return Style.isDark ? "#ffffff" : "#424242";
-                                        }
-                                    }
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
                                 }
                             }
                         }
                     }
-                }
 
-                Button {
-                    text: "Close"
-                    width: 120
-                    height: 40
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.bottomMargin: 20
-                    onClicked: calendarPopup.close()
-                    background: Rectangle {
-                        color: "transparent"
-                        border.color: Style.isDark ? "#757575" : "#bdbdbd"
-                        border.width: 1
-                        radius: 20
-                    }
-                    contentItem: Text {
-                        text: parent.text
-                        font.family: "Inter"
-                        font.pixelSize: 16
-                        color: Style.isDark ? "#ffffff" : "#616161"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
-                }
-
-                function updateDays() {
-                    var daysInMonth = [31, isLeapYear(yearSelector.currentText) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-                    var selectedMonth = monthSelector.currentIndex;
-                    var selectedYear = yearSelector.currentText;
-                    var firstDay = new Date(selectedYear, selectedMonth, 1).getDay();
-                    var adjustedFirstDay = (firstDay === 0) ? 6 : firstDay - 1;
-
-                    daysRepeater.model = daysInMonth[selectedMonth];
-
-                    for (var i = 0; i < daysRepeater.count; i++) {
-                        if (daysRepeater.itemAt(i)) {
-                            daysRepeater.itemAt(i).visible = (i >= adjustedFirstDay);
+                    Button {
+                        text: "Close" // Close button text
+                        width: 120
+                        height: 40
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.bottomMargin: 20
+                        onClicked: calendarPopup.close() // Closing the popup on click
+                        background: Rectangle {
+                            color: "transparent"
+                            border.color: Style.isDark ? "#757575" : "#bdbdbd" // Adjusting border color based on dark/light mode
+                            border.width: 1
+                            radius: 20
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            font.family: "Inter"
+                            font.pixelSize: 16
+                            color: Style.isDark ? "#ffffff" : "#616161" // Adjusting text color based on dark/light mode
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
                         }
                     }
-                    for (var j = 0; j < adjustedFirstDay; j++) {
-                        if (daysRepeater.itemAt(j)) daysRepeater.itemAt(j).visible = false;
+
+                    function updateDays() {
+                        var daysInMonth = [31, 31, 30, 31, 30, 31, 31, 31, 30, 31, 30, 31]; // Array of days in each month (adjusted for new order)
+                        var selectedMonth = displayMonth;
+                        var selectedYear = displayYear;
+                        var firstDay = new Date(selectedYear, selectedMonth, 1).getDay(); // Getting first day of the month
+                        var adjustedFirstDay = (firstDay === 0) ? 6 : firstDay - 1; // Adjusting for week start on Monday
+
+                        daysRepeater.model = daysInMonth[selectedMonth]; // Setting days model based on selected month
+
+                        for (var i = 0; i < daysRepeater.count; i++) {
+                            if (daysRepeater.itemAt(i)) {
+                                daysRepeater.itemAt(i).visible = (i >= adjustedFirstDay); // Showing days from the first day
+                            }
+                        }
+                        for (var j = 0; j < adjustedFirstDay; j++) {
+                            if (daysRepeater.itemAt(j)) daysRepeater.itemAt(j).visible = false; // Hiding days before the first day
+                        }
                     }
-                }
 
-                function isLeapYear(year) {
-                    return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
-                }
+                    function isLeapYear(year) {
+                        return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0); // Checking if the year is a leap year
+                    }
 
-                Component.onCompleted: updateDays()
+                    Component.onCompleted: {
+                        updateDays(); // Initializing days display
+                        monthSelector.currentIndex = displayMonth; // Ensuring July is selected on startup
+                    }
 
-                Timer {
-                    interval: 86400000
-                    running: true
-                    repeat: true
-                    onTriggered: {
-                        currentDate = new Date();
-                        updateDays();
+                    Timer {
+                        interval: 86400000 // Setting interval to 24 hours in milliseconds
+                        running: true
+                        repeat: true
+                        onTriggered: {
+                            currentDate.setDate(currentDate.getDate() + 1); // Moving to the next day (e.g., 27)
+                            updateDays(); // Refreshing days display
+                        }
                     }
                 }
             }
         }
-    }
 
     // Zoom meeting popup
     Popup {
@@ -1970,6 +1985,7 @@ ApplicationWindow {
             ColumnLayout {
                 anchors.fill: parent
                 spacing: 15
+
 
                 Text {
                     Layout.alignment: Qt.AlignHCenter
