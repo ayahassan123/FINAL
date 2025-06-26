@@ -307,19 +307,38 @@ ApplicationWindow {
                     verticalCenterOffset: -350
                     horizontalCenterOffset: 37
                 }
+                width: 100 // عرض الزر
+                height: 100 // ارتفاع الزر
                 icon.source: theme.isDark ? "qrc:/icons/car_action_icons/dark/lock.svg" : "qrc:/icons/car_action_icons/lock.svg"
-                icon.width: 90  // زيادة عرض الأيقونة
-                icon.height: 95 // زيادة ارتفاع الأيقونة
                 icon.color: root.isLocked ? "#ff0000" : "#00ff00"
+                icon.width: 80 // عرض الأيقونة
+                icon.height: 80 // ارتفاع الأيقونة
                 background: Rectangle {
                     color: "transparent"
                 }
                 onClicked: {
-                    root.isLocked = !root.isLocked
-                    logger.logMessage("Vehicle " + (root.isLocked ? "locked" : "unlocked"))
-                    console.log("Vehicle " + (root.isLocked ? "locked" : "unlocked"))
+                    root.isLocked = !root.isLocked;
+
+                    if (root.isLocked) {
+                        // قفل السيارة يؤدي إلى إيقاف كل العناصر
+                        root.isFrunkOpen = false;
+                        root.isTrunkOpen = false;
+                        root.isCharging = false; // إيقاف الشحن عند القفل
+                    }
+
+                    // تسجيل الحالة
+                    logger.logMessage("Vehicle " + (root.isLocked ? "locked" : "unlocked") +
+                                      ", Frunk: " + (root.isFrunkOpen ? "open" : "closed") +
+                                      ", Trunk: " + (root.isTrunkOpen ? "open" : "closed") +
+                                      ", Charging: " + (root.isCharging ? "on" : "off"));
+                    console.log("Vehicle " + (root.isLocked ? "locked" : "unlocked") +
+                                ", Charging: " + (root.isCharging ? "on" : "off"));
                 }
             }
+
+
+
+
 
             Button {
                 id: lightsButton
@@ -349,24 +368,32 @@ ApplicationWindow {
                 anchors {
                     horizontalCenter: parent.horizontalCenter
                     verticalCenter: parent.verticalCenter
-                    verticalCenterOffset: -80 // نقل الأيقونة للأسفل نحو الترونك
-                    horizontalCenterOffset: 550  // تعديل الموقع الأفقي ليكون أقرب إلى المنتصف أو الخلف
+                    verticalCenterOffset: -80 // ضبط الموقع العمودي
+                    horizontalCenterOffset: 550 // ضبط الموقع الأفقي
                 }
+                width: 80 // عرض الزر يساوي عرض الأيقونة
+                height: 80 // ارتفاع الزر يساوي ارتفاع الأيقونة
                 icon.source: theme.isDark ? "qrc:/icons/car_action_icons/Power.svg" : "qrc:/icons/car_action_icons/charge.svg"
-                icon.width: 50  // حجم افتراضي، يمكنك تعديله
-                icon.height: 50 // حجم افتراضي، يمكنك تعديله
-                icon.color: root.isCharging ? "#00ff00" : "#ff0000"  // أخضر عند الشغل، أحمر عند الإيقاف
-                background: Rectangle {
-                    color: "transparent"
-                }
+                icon.width: 50 // عرض الأيقونة
+                icon.height: 50 // ارتفاع الأيقونة
+                icon.color: root.isCharging ? "#00ff00" : "#ff0000" // تغيير اللون بناءً على حالة الشحن
+                enabled: !root.isLocked // تعطيل الزر عند قفل السيارة
+                background: null // إزالة الخلفية تمامًا
                 onClicked: {
-                    root.isCharging = !root.isCharging
-                    logger.logMessage("Charge " + (root.isCharging ? "started" : "stopped"))
-                    console.log("Charge " + (root.isCharging ? "started" : "stopped") + " at " + new Date().toLocaleTimeString())
-                    forceActiveFocus()
-                    root.update()  // تحديث الواجهة
+                    if (!root.isLocked) {
+                        root.isCharging = !root.isCharging
+                        logger.logMessage("Charge " + (root.isCharging ? "started" : "stopped"))
+                        console.log("Charge " + (root.isCharging ? "started" : "stopped") + " at " + new Date().toLocaleTimeString())
+                    } else {
+                        logger.logMessage("Cannot toggle charging while vehicle is locked")
+                        console.log("Cannot toggle charging while vehicle is locked")
+                    }
                 }
             }
+
+
+
+
 
             ColumnLayout {
                 anchors {
